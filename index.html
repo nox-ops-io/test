@@ -3,46 +3,245 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Тест</title>
+  <title>Я тебя люблю</title>
   <style>
+    :root{
+      --bg1:#ffdde1;
+      --bg2:#ee9ca7;
+      --bg3:#1f0a12;
+    }
     html, body { height: 100%; margin: 0; }
     body {
+      overflow: hidden;
       display: grid;
       place-items: center;
-      background: radial-gradient(1200px 800px at 50% 30%, #ffdde1 0%, #ee9ca7 45%, #1f0a12 120%);
-      font-family: ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 50% 30%, var(--bg1) 0%, var(--bg2) 45%, var(--bg3) 120%);
+      font-family: ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color: #fff;
     }
-    .card {
-      text-align: center;
-      padding: 48px 56px;
+
+    .stage{
+      perspective: 900px;
+      width: min(92vw, 560px);
+      height: min(64vh, 420px);
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .card{
+      width: 100%;
+      height: 100%;
       border-radius: 28px;
       background: rgba(255,255,255,0.12);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border: 1px solid rgba(255,255,255,0.18);
       box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-      max-width: 900px;
-      margin: 24px;
+      transform-style: preserve-3d;
+      will-change: transform;
+      display: grid;
+      place-items: center;
+      position: relative;
     }
-    h1 {
-      margin: 0;
-      font-weight: 800;
+
+    .glow{
+      position:absolute;
+      inset:-40px;
+      background: radial-gradient(circle at var(--gx,50%) var(--gy,40%), rgba(255,255,255,0.35), rgba(255,255,255,0) 55%);
+      filter: blur(18px);
+      transform: translateZ(-40px);
+      opacity: .9;
+      pointer-events:none;
+    }
+
+    h1{
+      margin:0;
+      text-align:center;
+      font-weight: 900;
       letter-spacing: -0.02em;
-      font-size: clamp(42px, 6vw, 88px);
-      color: #fff;
-      text-shadow: 0 8px 30px rgba(0,0,0,0.35);
+      font-size: clamp(42px, 7vw, 88px);
+      text-shadow: 0 10px 40px rgba(0,0,0,0.45);
+      transform: translateZ(55px);
+      padding: 0 18px;
     }
-    p {
-      margin: 18px 0 0;
-      color: rgba(255,255,255,0.85);
-      font-size: 16px;
+
+    .sub{
+      position:absolute;
+      bottom: 18px;
+      left: 0;
+      right: 0;
+      text-align:center;
+      font-size: 14px;
+      opacity: .9;
+      transform: translateZ(28px);
+    }
+
+    .controls{
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      display:flex;
+      gap:10px;
+      align-items:center;
+      z-index: 10;
+    }
+
+    button{
+      appearance:none;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(0,0,0,0.25);
+      color:#fff;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    button:active{ transform: translateY(1px); }
+
+    .hint{
+      font-size: 13px;
+      opacity: .85;
+      max-width: 70vw;
+      text-align:center;
+    }
+
+    /* small floating hearts */
+    .heart{
+      position:absolute;
+      width: 16px;
+      height: 16px;
+      transform: rotate(45deg);
+      background: rgba(255,255,255,0.55);
+      border-radius: 3px;
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,0.25));
+      animation: float 6s linear infinite;
+      opacity: .85;
+      pointer-events:none;
+    }
+    .heart:before, .heart:after{
+      content:"";
+      position:absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: inherit;
+    }
+    .heart:before{ left:-8px; top:0; }
+    .heart:after{ top:-8px; left:0; }
+
+    @keyframes float{
+      from{ transform: translate3d(var(--x,0), 120%, 0) rotate(45deg) scale(var(--s,1)); }
+      to{ transform: translate3d(var(--x,0), -160%, 0) rotate(45deg) scale(var(--s,1)); }
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Я тебя люблю</h1>
-    <p>тест</p>
+  <div class="stage" id="stage">
+    <div class="card" id="card" aria-label="Я тебя люблю">
+      <div class="glow" id="glow"></div>
+      <h1>Я тебя люблю</h1>
+      <div class="sub" id="status">Наклоняй телефон ✦</div>
+    </div>
   </div>
+
+  <div class="controls">
+    <button id="enable">Включить гироскоп</button>
+    <div class="hint" id="hint">На iPhone нужно разрешение. Если не работает — нажми кнопку.</div>
+  </div>
+
+  <script>
+    const card = document.getElementById('card');
+    const stage = document.getElementById('stage');
+    const glow = document.getElementById('glow');
+    const status = document.getElementById('status');
+    const hint = document.getElementById('hint');
+    const btn = document.getElementById('enable');
+
+    let hasMotion = false;
+    let usingGyro = false;
+
+    // fallback: pointer tilt
+    function applyTilt(xNorm, yNorm){
+      const max = 14; // degrees
+      const rx = (yNorm * max).toFixed(2);
+      const ry = (xNorm * max).toFixed(2);
+      card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+
+      const gx = (50 + xNorm * 25);
+      const gy = (40 + yNorm * 25);
+      glow.style.setProperty('--gx', gx + '%');
+      glow.style.setProperty('--gy', gy + '%');
+    }
+
+    stage.addEventListener('pointermove', (e)=>{
+      if (usingGyro) return;
+      const r = stage.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width;
+      const y = (e.clientY - r.top) / r.height;
+      applyTilt((x - 0.5) * 2, (y - 0.5) * 2);
+    });
+
+    // create floating hearts
+    for (let i=0;i<14;i++){
+      const h = document.createElement('div');
+      h.className='heart';
+      const x = (Math.random()*120-60).toFixed(1)+'%';
+      const s = (0.6+Math.random()*1.3).toFixed(2);
+      h.style.setProperty('--x', x);
+      h.style.setProperty('--s', s);
+      h.style.left = (Math.random()*100).toFixed(1)+'%';
+      h.style.animationDelay = (-Math.random()*6).toFixed(2)+'s';
+      h.style.opacity = (0.35+Math.random()*0.5).toFixed(2);
+      stage.appendChild(h);
+    }
+
+    function onDeviceOrientation(e){
+      hasMotion = true;
+      usingGyro = true;
+      // beta: x tilt front/back, gamma: left/right
+      const beta = Math.max(-35, Math.min(35, e.beta ?? 0));
+      const gamma = Math.max(-35, Math.min(35, e.gamma ?? 0));
+
+      const xNorm = gamma / 35;
+      const yNorm = beta / 35;
+      applyTilt(xNorm, yNorm);
+      status.textContent = 'Гироскоп активен ✦';
+      hint.textContent = 'Можешь просто наклонять телефон.';
+    }
+
+    async function enableMotion(){
+      try{
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
+          const perm = await DeviceOrientationEvent.requestPermission();
+          if (perm !== 'granted') throw new Error('permission denied');
+        }
+        window.addEventListener('deviceorientation', onDeviceOrientation, true);
+        // give it a moment
+        setTimeout(()=>{
+          if (!hasMotion){
+            hint.textContent = 'Не вижу данных гироскопа. Проверь настройки Safari: Motion & Orientation Access.';
+            status.textContent = 'Гироскоп недоступен';
+          }
+        }, 1200);
+      } catch(err){
+        hint.textContent = 'Гироскоп не разрешён. Разреши доступ к Motion/Orientation и попробуй снова.';
+        status.textContent = 'Нужен доступ';
+      }
+    }
+
+    btn.addEventListener('click', enableMotion);
+
+    // try auto-enable where possible
+    // (won't work on iOS without user gesture)
+    if (!(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function')){
+      enableMotion();
+    } else {
+      hint.textContent = 'Нажми «Включить гироскоп», чтобы работал наклон на iPhone.';
+    }
+  </script>
 </body>
 </html>
