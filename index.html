@@ -150,6 +150,7 @@
 
   <div class="controls">
     <button id="enable">Включить гироскоп</button>
+    <button id="calibrate" style="display:none">Калибровать</button>
     <div class="hint" id="hint">На iPhone нужно разрешение. Если не работает — нажми кнопку.</div>
   </div>
 
@@ -160,6 +161,7 @@
     const status = document.getElementById('status');
     const hint = document.getElementById('hint');
     const btn = document.getElementById('enable');
+    const calBtn = document.getElementById('calibrate');
 
     let hasMotion = false;
     let usingGyro = false;
@@ -258,18 +260,34 @@
     }
     requestAnimationFrame(tick);
 
+    // Portrait-oriented gyro with smoothing + calibration
+    let gx = 0, gy = 0; // filtered norm
+    let zeroX = 0, zeroY = 0;
+
+    function calibrate(){
+      zeroX = gx;
+      zeroY = gy;
+      status.textContent = 'Ок, откалибровано ✦';
+    }
+
     function onDeviceOrientation(e){
       hasMotion = true;
       usingGyro = true;
-      // beta: x tilt front/back, gamma: left/right
+
+      // Portrait: gamma ~ left/right, beta ~ forward/back
       const beta = Math.max(-35, Math.min(35, e.beta ?? 0));
       const gamma = Math.max(-35, Math.min(35, e.gamma ?? 0));
+      const targetX = gamma / 35;
+      const targetY = beta / 35;
 
-      const xNorm = gamma / 35;
-      const yNorm = beta / 35;
-      applyTilt(xNorm, yNorm);
+      // low-pass filter to reduce jitter
+      const a = 0.12;
+      gx = gx + (targetX - gx) * a;
+      gy = gy + (targetY - gy) * a;
+
+      applyTilt(gx - zeroX, gy - zeroY);
       status.textContent = 'Гироскоп активен ✦';
-      hint.textContent = 'Можешь просто наклонять телефон.';
+      hint.textContent = 'Наклоняй телефон. Если уводит — нажми «Калибровать».';
     }
 
     async function enableMotion(){
@@ -284,6 +302,7 @@
         }
         window.addEventListener('deviceorientation', onDeviceOrientation, true);
         window.addEventListener('devicemotion', onDeviceMotion, true);
+        calBtn.style.display = 'inline-block';
         // give it a moment
         setTimeout(()=>{
           if (!hasMotion){
@@ -298,6 +317,7 @@
     }
 
     btn.addEventListener('click', enableMotion);
+    calBtn.addEventListener('click', calibrate);
 
     // try auto-enable where possible
     // (won't work on iOS without user gesture)
